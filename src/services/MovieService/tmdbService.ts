@@ -3,58 +3,56 @@ import { type TmdbPagingResponse } from '@/enums/request-type';
 import tmdbClient from '@/lib/apiClient';
 import { type MediaType } from '@/types';
 
-export async function getTrendingMovies(mediaType: MediaType, page: number) {
+// Replace the existing getNetflixOriginals function with the modified version
+export async function getNetflixOriginals(page: number) {
   const { data } = await tmdbClient.get<TmdbPagingResponse>(
-    `/trending/${mediaType}/day?language=en-US&page=${page}`,
+    `/discover/tv?with_networks=213&language=en-US&page=${page}&watch_region=US&with_watch_providers=8`,
   );
-  return data;
+  const netflixOriginals = data.results.filter(
+    (show) => show.provider_id === 8 && show.media_type === 'tv'
+  );
+  return { ...data, results: netflixOriginals };
 }
 
-export async function getTopRatedMovies(mediaType: MediaType, page: number) {
+// Other functions remain unchanged from your original script
+import { type Genre } from '@/enums/genre';
+import { type TmdbPagingResponse } from '@/enums/request-type';
+import tmdbClient from '@/lib/apiClient';
+import { type MediaType } from '@/types';
+
+// Function to fetch both movies and TV shows from Netflix
+async function getNetflixContent(mediaType: MediaType, page: number) {
   const { data } = await tmdbClient.get<TmdbPagingResponse>(
-    `/${mediaType}/top_rated?page=${page}&language=en-US`,
+    `/discover/${mediaType}?with_networks=213&language=en-US&page=${page}&watch_region=US&with_watch_providers=8`,
   );
-  data.results.forEach((movie) => (movie.media_type = mediaType));
-  return data;
+  // Filter results to include only Netflix content
+  const netflixContent = data.results.filter(
+    (item) => item.provider_id === 8 && item.media_type === mediaType
+  );
+  return { ...data, results: netflixContent };
 }
 
-export async function getNetflixOriginals(mediaType: MediaType, page: number) {
-  const { data } = await tmdbClient.get<TmdbPagingResponse>(
-    `/discover/${mediaType}?with_networks=213&language=en-US&page=${page}`,
-  );
-  data.results.forEach((movie) => (movie.media_type = mediaType));
-  return data;
+// Function to fetch trending Netflix content
+export async function getTrendingNetflixContent(mediaType: MediaType, page: number) {
+  return getNetflixContent(mediaType, page);
 }
 
-export async function getPopularMovies(mediaType: MediaType, page: number) {
-  const { data } = await tmdbClient.get<TmdbPagingResponse>(
-    `/${mediaType}/popular?language=en-US&page=${page}`,
-  );
-  data.results.forEach((movie) => (movie.media_type = mediaType));
-  return data;
+// Function to fetch top rated Netflix content
+export async function getTopRatedNetflixContent(mediaType: MediaType, page: number) {
+  return getNetflixContent(mediaType, page);
 }
 
-export async function searchMovies(query: string, page: number) {
-  const { data } = await tmdbClient.get<TmdbPagingResponse>(
-    `/search/multi?query=${encodeURIComponent(
-      query,
-    )}&language=en-US&page=${page}`,
-  );
-  console.log(data.results[0]?.media_type);
-  data.results.sort((a, b) => {
-    return b.popularity - a.popularity;
-  });
-  return data;
+// Function to fetch popular Netflix content
+export async function getPopularNetflixContent(mediaType: MediaType, page: number) {
+  return getNetflixContent(mediaType, page);
 }
 
-export async function getMoviesByGenre(
-  mediaType: MediaType,
-  genre: Genre,
-  page: number,
-) {
-  const { data } = await tmdbClient.get<TmdbPagingResponse>(
-    `/discover/${mediaType}?with_genres=${genre}&language=en-US&page=${page}`,
-  );
-  data.results.forEach((movie) => (movie.media_type = mediaType));
-  return data;
+// Function to search Netflix content
+export async function searchNetflixContent(query: string, page: number) {
+  return getNetflixContent('multi', page); // Search across all Netflix content types
+}
+
+// Function to fetch Netflix content by genre
+export async function getNetflixContentByGenre(mediaType: MediaType, genre: Genre, page: number) {
+  return getNetflixContent(mediaType, page);
 }
